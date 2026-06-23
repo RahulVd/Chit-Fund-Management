@@ -1,5 +1,6 @@
 package com.rahul.chitfund_backend.controller;
 
+import com.rahul.chitfund_backend.dto.MemberPaymentStatus;
 import com.rahul.chitfund_backend.dto.MonthlyPaymentSummary;
 import com.rahul.chitfund_backend.dto.PaymentRequest;
 import com.rahul.chitfund_backend.entity.Member;
@@ -8,12 +9,7 @@ import com.rahul.chitfund_backend.service.PaymentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,9 +26,19 @@ public class PaymentController {
                 request.getChitGroupId(),
                 request.getMemberId(),
                 request.getMonthNumber(),
-                request.getAmountPaid()
+                request.getPaymentDate(),
+                request.getPaymentMode(),
+                request.getReferenceNote()
         );
         return ResponseEntity.ok(payment);
+    }
+
+    @DeleteMapping("/group/{chitGroupId}/month/{monthNumber}/member/{memberId}")
+    public ResponseEntity<Void> unmarkPayment(@PathVariable Long chitGroupId,
+                                              @PathVariable Integer monthNumber,
+                                              @PathVariable Long memberId) {
+        paymentService.unmarkPayment(chitGroupId, memberId, monthNumber);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/group/{chitGroupId}")
@@ -46,8 +52,14 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getMembersWhoHaveNotPaid(chitGroupId, monthNumber));
     }
 
+    @GetMapping("/group/{chitGroupId}/month/{monthNumber}/status")
+    public ResponseEntity<List<MemberPaymentStatus>> getMonthStatus(@PathVariable Long chitGroupId,
+                                                                    @PathVariable Integer monthNumber) {
+        return ResponseEntity.ok(paymentService.getMonthStatus(chitGroupId, monthNumber));
+    }
+
     @GetMapping("/group/{chitGroupId}/month/{monthNumber}/summary")
-    public ResponseEntity<  MonthlyPaymentSummary> getMonthlySummary(@PathVariable Long chitGroupId,
+    public ResponseEntity<MonthlyPaymentSummary> getMonthlySummary(@PathVariable Long chitGroupId,
                                                                    @PathVariable Integer monthNumber) {
         return ResponseEntity.ok(paymentService.getMonthlySummary(chitGroupId, monthNumber));
     }

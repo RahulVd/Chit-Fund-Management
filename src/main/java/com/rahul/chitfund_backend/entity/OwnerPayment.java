@@ -17,8 +17,8 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "payments")
-public class Payment {
+@Table(name = "owner_payments")
+public class OwnerPayment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,12 +28,8 @@ public class Payment {
     @JoinColumn(name = "chit_group_id", nullable = false)
     private ChitGroup chitGroup;
 
-    @ManyToOne
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
-
     @Column(nullable = false)
-    private Integer monthNumber;
+    private Integer monthNumber;   // same meaning as Payment.monthNumber
 
     @Column(nullable = false)
     private BigDecimal amountPaid;
@@ -42,12 +38,5 @@ public class Payment {
     private LocalDate paymentDate;
 
     @Enumerated(EnumType.STRING)
-    private PaymentStatus status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_mode")
-    private PaymentMode paymentMode;
-
-    @Column(name = "reference_note", length = 500)
-    private String referenceNote;
+    private PaymentStatus status;   // reuses your existing PaymentStatus enum
 }

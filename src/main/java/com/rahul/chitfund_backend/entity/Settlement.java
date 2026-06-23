@@ -2,8 +2,6 @@ package com.rahul.chitfund_backend.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -17,8 +15,8 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "payments")
-public class Payment {
+@Table(name = "settlements")
+public class Settlement {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,21 +31,8 @@ public class Payment {
     private Member member;
 
     @Column(nullable = false)
-    private Integer monthNumber;
+    private BigDecimal dividendAmount;
 
     @Column(nullable = false)
-    private BigDecimal amountPaid;
-
-    @Column(nullable = false)
-    private LocalDate paymentDate;
-
-    @Enumerated(EnumType.STRING)
-    private PaymentStatus status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_mode")
-    private PaymentMode paymentMode;
-
-    @Column(name = "reference_note", length = 500)
-    private String referenceNote;
+    private LocalDate settledDate;
 }

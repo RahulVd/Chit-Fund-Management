@@ -44,4 +44,7 @@ public class Auction {
     private Boolean isDoubleChit = false;
 
     private Boolean isOwnerMonth = false;
+
+    private BigDecimal ownerBalanceAfter;
+
 }

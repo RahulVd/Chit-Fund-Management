@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auctions")
@@ -19,12 +20,13 @@ public class AuctionController {
     private AuctionService auctionService;
 
     @PostMapping("/record")
-    public ResponseEntity<Auction> recordAuction(@Valid  @RequestBody AuctionRequest request) {
+    public ResponseEntity<Auction> recordAuction(@Valid @RequestBody AuctionRequest request) {
         Auction auction = auctionService.recordAuction(
                 request.getChitGroupId(),
                 request.getWinnerId(),
                 request.getMonthNumber(),
-                request.getBidAmount()
+                request.getBidAmount(),
+                request.isDoubleChit()
         );
         return ResponseEntity.ok(auction);
     }
@@ -37,5 +39,10 @@ public class AuctionController {
     @GetMapping("/group/{chitGroupId}/owner-balance")
     public ResponseEntity<BigDecimal> getOwnerBalance(@PathVariable Long chitGroupId) {
         return ResponseEntity.ok(auctionService.getOwnerBalance(chitGroupId));
+    }
+
+    @GetMapping("/group/{chitGroupId}/last-month-payout")
+    public ResponseEntity<Map<String, Object>> getLastMonthPayout(@PathVariable Long chitGroupId) {
+        return ResponseEntity.ok(auctionService.getLastMonthPayout(chitGroupId));
     }
 }

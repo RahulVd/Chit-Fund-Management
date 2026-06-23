@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Member> findByChitGroupId(Long chitGroupId);
+    long countByChitGroupId(Long chitGroupId);
 }

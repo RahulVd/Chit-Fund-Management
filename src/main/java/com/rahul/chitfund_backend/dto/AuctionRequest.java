@@ -23,4 +23,7 @@ public class AuctionRequest {
     @NotNull(message = "Bid amount is required")
     @DecimalMin(value = "1.0", message = "Bid amount must be greater than 0")
     private BigDecimal bidAmount;
+
+    private boolean doubleChit;
+
 }
