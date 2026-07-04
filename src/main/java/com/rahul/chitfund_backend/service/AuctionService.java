@@ -32,7 +32,7 @@ public class AuctionService {
     public Auction recordAuction(Long chitGroupId, Long winnerId,
                                  Integer monthNumber, BigDecimal bidAmount,
                                  boolean isDoubleChitRequested) {
-
+        System.out.println("DEBUG isDoubleChit received = " + isDoubleChitRequested);
         ChitGroup group = chitGroupRepository.findById(chitGroupId)
                 .orElseThrow(() -> new CustomException("Chit group not found"));
 

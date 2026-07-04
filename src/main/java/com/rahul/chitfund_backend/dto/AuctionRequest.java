@@ -24,6 +24,6 @@ public class AuctionRequest {
     @DecimalMin(value = "1.0", message = "Bid amount must be greater than 0")
     private BigDecimal bidAmount;
 
-    private boolean isDoubleChit;
+    private Boolean doubleChit;  // use Boolean wrapper, not boolean primitive
 
 }

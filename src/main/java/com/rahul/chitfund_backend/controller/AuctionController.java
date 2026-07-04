@@ -26,7 +26,7 @@ public class AuctionController {
                 request.getWinnerId(),
                 request.getMonthNumber(),
                 request.getBidAmount(),
-                request.isDoubleChit()
+                request.getDoubleChit()
         );
         return ResponseEntity.ok(auction);
     }
