@@ -45,4 +45,15 @@ public class AuctionController {
     public ResponseEntity<Map<String, Object>> getLastMonthPayout(@PathVariable Long chitGroupId) {
         return ResponseEntity.ok(auctionService.getLastMonthPayout(chitGroupId));
     }
+
+    // AuctionController
+    @GetMapping("/chitgroups/{chitGroupId}/completed-months")
+    public List<Integer> getCompletedMonths(@PathVariable Long chitGroupId) {
+        return auctionService.getAuctionsByGroup(chitGroupId)
+                .stream()
+                .map(Auction::getMonthNumber)
+                .distinct()
+                .sorted()
+                .toList();
+    }
 }

@@ -1,6 +1,7 @@
 package com.rahul.chitfund_backend.service;
 
 import com.rahul.chitfund_backend.entity.ChitGroup;
+import com.rahul.chitfund_backend.exception.CustomException;
 import com.rahul.chitfund_backend.repository.ChitGroupRepository;
 import org.springframework.stereotype.Service;
 
@@ -21,5 +22,10 @@ public class ChitGroupService {
 
     public List<ChitGroup> getAllChitGroups() {
         return repository.findAll();
+    }
+
+    public ChitGroup getChitGroupById(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new CustomException("Chit group not found"));
     }
 }

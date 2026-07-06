@@ -3,10 +3,13 @@ package com.rahul.chitfund_backend.service;
 import com.rahul.chitfund_backend.dto.MemberPaymentStatus;
 import com.rahul.chitfund_backend.dto.MonthlyPaymentSummary;
 import com.rahul.chitfund_backend.entity.*;
+import com.rahul.chitfund_backend.exception.CustomException;
 import com.rahul.chitfund_backend.exception.DuplicatePaymentException;
 import com.rahul.chitfund_backend.exception.ResourceNotFoundException;
+import com.rahul.chitfund_backend.repository.AuctionRepository;
 import com.rahul.chitfund_backend.repository.ChitGroupRepository;
 import com.rahul.chitfund_backend.repository.MemberRepository;
+import com.rahul.chitfund_backend.repository.OwnerMonthRepository;
 import com.rahul.chitfund_backend.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,29 @@ public class PaymentService {
     @Autowired
     private MemberRepository memberRepository;
 
+    @Autowired
+    private AuctionRepository auctionRepository;
+
+    @Autowired
+    private OwnerMonthRepository ownerMonthRepository;
+
+    // Same rule as AuctionService: payments can only go up to (highest month
+    // already closed via auction or owner-month) + 1 — keeps payments from
+    // jumping ahead to future months before the group has actually reached them.
+    private int computeMaxAllowedMonth(Long chitGroupId) {
+        int maxAuctionMonth = auctionRepository.findByChitGroupId(chitGroupId).stream()
+                .mapToInt(Auction::getMonthNumber)
+                .max()
+                .orElse(0);
+
+        int maxOwnerMonth = ownerMonthRepository.findByChitGroupId(chitGroupId).stream()
+                .mapToInt(OwnerMonth::getMonthNumber)
+                .max()
+                .orElse(0);
+
+        return Math.max(maxAuctionMonth, maxOwnerMonth) + 1;
+    }
+
     @Transactional
     public Payment recordPayment(Long chitGroupId, Long memberId, Integer monthNumber,
                                  LocalDate paymentDate, PaymentMode paymentMode, String referenceNote) {
@@ -44,6 +70,13 @@ public class PaymentService {
 
         ChitGroup group = chitGroupRepository.findById(chitGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Chit group not found"));
+
+        // NEW: enforce sequential months
+        int maxAllowedMonth = computeMaxAllowedMonth(chitGroupId);
+        if (monthNumber > maxAllowedMonth) {
+            throw new CustomException("Cannot record a payment for month " + monthNumber +
+                    " yet — month " + maxAllowedMonth + " must be completed first.");
+        }
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Member not found"));

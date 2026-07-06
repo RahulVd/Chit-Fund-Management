@@ -42,7 +42,11 @@ public class JwtUtil {
         try {
             Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(token);
             return true;
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            System.out.println("JWT expired: " + e.getMessage());
+            return false;
         } catch (Exception e) {
+            System.out.println("JWT invalid: " + e.getMessage());
             return false;
         }
     }

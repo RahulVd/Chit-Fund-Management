@@ -4,11 +4,13 @@ import com.rahul.chitfund_backend.dto.DashboardSummary;
 import com.rahul.chitfund_backend.entity.Auction;
 import com.rahul.chitfund_backend.entity.ChitGroup;
 import com.rahul.chitfund_backend.entity.Member;
+import com.rahul.chitfund_backend.entity.OwnerMonth;
 import com.rahul.chitfund_backend.entity.OwnerPayment;
 import com.rahul.chitfund_backend.entity.Payment;
 import com.rahul.chitfund_backend.exception.CustomException;
 import com.rahul.chitfund_backend.repository.AuctionRepository;
 import com.rahul.chitfund_backend.repository.ChitGroupRepository;
+import com.rahul.chitfund_backend.repository.OwnerMonthRepository;
 import com.rahul.chitfund_backend.repository.OwnerPaymentRepository;
 import com.rahul.chitfund_backend.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,9 @@ public class DashboardService {
     @Autowired
     private OwnerPaymentRepository ownerPaymentRepository;
 
+    @Autowired
+    private OwnerMonthRepository ownerMonthRepository;
+
     public DashboardSummary getGroupDashboard(Long chitGroupId) {
         ChitGroup group = chitGroupRepository.findById(chitGroupId)
                 .orElseThrow(() -> new CustomException("Chit group not found"));
@@ -50,34 +55,32 @@ public class DashboardService {
 
         BigDecimal totalCollected = memberTotal.add(ownerTotal);
 
-        // Find the latest month that has ANY auction recorded — that's the true current month
-        int currentMonth = auctionRepository.findByChitGroupId(chitGroupId)
+        // Current month = highest month with a completed Auction or OwnerMonth, + 1.
+        // Same rule used across AuctionService, PaymentService, and CloseMonth —
+        // NEVER derive this from payment data, since payments can be recorded
+        // ahead of an actual auction/owner-month happening.
+        int maxAuctionMonth = auctionRepository.findByChitGroupId(chitGroupId)
                 .stream()
                 .mapToInt(Auction::getMonthNumber)
                 .max()
                 .orElse(0);
 
-// If no auctions yet, fall back to highest payment month
-        if (currentMonth == 0) {
-            currentMonth = allPayments.stream()
-                    .mapToInt(Payment::getMonthNumber)
-                    .max()
-                    .orElse(0);
-        }
+        int maxOwnerMonth = ownerMonthRepository.findByChitGroupId(chitGroupId)
+                .stream()
+                .mapToInt(OwnerMonth::getMonthNumber)
+                .max()
+                .orElse(0);
+
+        int currentMonth = Math.max(maxAuctionMonth, maxOwnerMonth) + 1;
 
         List<Auction> auctions = auctionRepository.findByChitGroupId(chitGroupId);
         int membersWhoWon = auctions.size();
 
-        // Unpaid members for the CURRENT month — empty list if no payments recorded yet at all
-        List<String> unpaidNames;
-        if (currentMonth > 0) {
-            List<Member> unpaidMembers = paymentRepository.findMembersWhoHaveNotPaid(chitGroupId, currentMonth);
-            unpaidNames = unpaidMembers.stream()
-                    .map(Member::getName)
-                    .collect(Collectors.toList());
-        } else {
-            unpaidNames = Collections.emptyList();
-        }
+        // Unpaid members for the CURRENT month
+        List<Member> unpaidMembers = paymentRepository.findMembersWhoHaveNotPaid(chitGroupId, currentMonth);
+        List<String> unpaidNames = unpaidMembers.stream()
+                .map(Member::getName)
+                .collect(Collectors.toList());
 
         return new DashboardSummary(
                 group.getChitName(),
