@@ -53,8 +53,10 @@ public class OwnerMonthService {
             throw new CustomException("This chit group is already completed.");
         }
 
-        // Add pool amount to group balance (the accumulated dividend pool)
-        group.setChitGroupBalance(group.getChitGroupBalance().add(group.getTotalChitAmount()));
+        // Owner-month: the owner takes the full pot for the month. This is a clean
+        // payout to the owner -- it does NOT add to the dividend pool (chitGroupBalance).
+        // The dividend pool only grows from auction discounts, not from owner-months.
+        // So we do NOT mutate chitGroupBalance here. We only record the owner-month row.
         chitGroupRepository.save(group);
 
         // Save owner month record FIRST, so counts below include it
