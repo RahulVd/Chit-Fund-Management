@@ -36,9 +36,9 @@ public class AuctionController {
         return ResponseEntity.ok(auctionService.getAuctionsByGroup(chitGroupId));
     }
 
-    @GetMapping("/group/{chitGroupId}/owner-balance")
-    public ResponseEntity<BigDecimal> getOwnerBalance(@PathVariable Long chitGroupId) {
-        return ResponseEntity.ok(auctionService.getOwnerBalance(chitGroupId));
+    @GetMapping("/group/{chitGroupId}/chit-group-balance")
+    public ResponseEntity<BigDecimal> getChitGroupBalance(@PathVariable Long chitGroupId) {
+        return ResponseEntity.ok(auctionService.getChitGroupBalance(chitGroupId));
     }
 
     @GetMapping("/group/{chitGroupId}/last-month-payout")

@@ -3,6 +3,7 @@ package com.rahul.chitfund_backend.service;
 import com.rahul.chitfund_backend.dto.DashboardSummary;
 import com.rahul.chitfund_backend.entity.Auction;
 import com.rahul.chitfund_backend.entity.ChitGroup;
+import com.rahul.chitfund_backend.entity.ChitGroupStatus;
 import com.rahul.chitfund_backend.entity.Member;
 import com.rahul.chitfund_backend.entity.OwnerMonth;
 import com.rahul.chitfund_backend.entity.OwnerPayment;
@@ -73,14 +74,23 @@ public class DashboardService {
 
         int currentMonth = Math.max(maxAuctionMonth, maxOwnerMonth) + 1;
 
+        // Clamp: once a group is COMPLETED there is no "next" month, so reporting
+        // month N+1 (and a phantom unpaid list for that month) is just noise.
+        // Pin currentMonth to totalMembers and skip the unpaid-members lookup.
+        boolean completed = group.getStatus() == ChitGroupStatus.COMPLETED;
+        List<String> unpaidNames;
+        if (completed) {
+            currentMonth = group.getTotalMembers();
+            unpaidNames = Collections.emptyList();
+        } else {
+            List<Member> unpaidMembers = paymentRepository.findMembersWhoHaveNotPaid(chitGroupId, currentMonth);
+            unpaidNames = unpaidMembers.stream()
+                    .map(Member::getName)
+                    .collect(Collectors.toList());
+        }
+
         List<Auction> auctions = auctionRepository.findByChitGroupId(chitGroupId);
         int membersWhoWon = auctions.size();
-
-        // Unpaid members for the CURRENT month
-        List<Member> unpaidMembers = paymentRepository.findMembersWhoHaveNotPaid(chitGroupId, currentMonth);
-        List<String> unpaidNames = unpaidMembers.stream()
-                .map(Member::getName)
-                .collect(Collectors.toList());
 
         return new DashboardSummary(
                 group.getChitName(),

@@ -45,6 +45,6 @@ public class Auction {
 
     private Boolean isOwnerMonth = false;
 
-    private BigDecimal ownerBalanceAfter;
+    private BigDecimal chitGroupBalanceAfter;
 
 }

@@ -27,7 +27,7 @@ public class ChitGroup {
 
     private LocalDate startDate;
 
-    private BigDecimal ownerBalance = BigDecimal.ZERO;
+    private BigDecimal chitGroupBalance = BigDecimal.ZERO;
 
 
 

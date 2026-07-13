@@ -10,6 +10,7 @@ import com.rahul.chitfund_backend.repository.MemberRepository;
 import com.rahul.chitfund_backend.repository.OwnerMonthRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -29,7 +30,8 @@ public class OwnerMonthService {
     @Autowired
     private AuctionRepository auctionRepository;
 
-    public OwnerMonth triggerOwnerMonth(Long chitGroupId, Integer monthNumber) {
+        @Transactional
+        public OwnerMonth triggerOwnerMonth(Long chitGroupId, Integer monthNumber) {
 
         ChitGroup group = chitGroupRepository.findById(chitGroupId)
                 .orElseThrow(() -> new CustomException("Chit group not found"));
@@ -51,8 +53,8 @@ public class OwnerMonthService {
             throw new CustomException("This chit group is already completed.");
         }
 
-        // Add pool amount to owner balance
-        group.setOwnerBalance(group.getOwnerBalance().add(group.getTotalChitAmount()));
+        // Add pool amount to group balance (the accumulated dividend pool)
+        group.setChitGroupBalance(group.getChitGroupBalance().add(group.getTotalChitAmount()));
         chitGroupRepository.save(group);
 
         // Save owner month record FIRST, so counts below include it
@@ -63,7 +65,9 @@ public class OwnerMonthService {
         ownerMonth.setTriggeredDate(LocalDate.now());
         OwnerMonth savedOwnerMonth = ownerMonthRepository.save(ownerMonth);
 
-        // Now check total winners across BOTH auctions and owner months
+        // Now check total winners across BOTH auctions and owner months.
+        // Data-driven completion: totalMembers is the actual member row count;
+        // +1 is the owner slot (owner wins one month but isn't in members table).
         long totalMembers = memberRepository.countByChitGroupId(chitGroupId);
         long totalAuctionWinners = auctionRepository.findByChitGroupId(chitGroupId).size();
         long totalOwnerWinners = ownerMonthRepository.findByChitGroupId(chitGroupId).size();

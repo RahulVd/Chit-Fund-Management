@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class SettlementService {
@@ -55,21 +55,31 @@ public class SettlementService {
             throw new CustomException("No members found for this group.");
         }
 
-        // 5. Calculate dividend per member
-        BigDecimal ownerBalance = group.getOwnerBalance();
+        // 5. Calculate dividend per member.
+        // The group balance is split equally. To keep the books reconciling to
+        // the paisa, every member gets the floor share and the leftover (the
+        // rounding remainder) is assigned to the last member. Example:
+        // 1000.00 / 3 -> 333.33 + 333.33 + 333.34 = 1000.00 exactly.
+        BigDecimal balance = group.getChitGroupBalance();
         BigDecimal totalMembers = BigDecimal.valueOf(members.size());
-        BigDecimal dividendPerMember = ownerBalance.divide(totalMembers, 2, RoundingMode.HALF_UP);
+        BigDecimal baseShare = balance.divide(totalMembers, 2, RoundingMode.FLOOR);
+        BigDecimal totalDistributedByBase = baseShare.multiply(totalMembers);
+        BigDecimal remainder = balance.subtract(totalDistributedByBase);
 
-        // 6. Create one settlement row per member
+        // 6. Create one settlement row per member; last member absorbs remainder.
         LocalDate today = LocalDate.now();
-        List<Settlement> settlements = members.stream().map(member -> {
+        List<Settlement> settlements = new ArrayList<>();
+        for (int i = 0; i < members.size(); i++) {
+            BigDecimal share = (i == members.size() - 1)
+                    ? baseShare.add(remainder)
+                    : baseShare;
             Settlement settlement = new Settlement();
             settlement.setChitGroup(group);
-            settlement.setMember(member);
-            settlement.setDividendAmount(dividendPerMember);
+            settlement.setMember(members.get(i));
+            settlement.setDividendAmount(share);
             settlement.setSettledDate(today);
-            return settlement;
-        }).collect(Collectors.toList());
+            settlements.add(settlement);
+        }
 
         return settlementRepository.saveAll(settlements);
     }

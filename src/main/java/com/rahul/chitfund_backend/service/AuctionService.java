@@ -9,8 +9,9 @@
     import com.rahul.chitfund_backend.repository.ChitGroupRepository;
     import com.rahul.chitfund_backend.repository.MemberRepository;
     import com.rahul.chitfund_backend.repository.OwnerMonthRepository;
-    import org.springframework.beans.factory.annotation.Autowired;
-    import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
     import java.math.BigDecimal;
     import java.time.LocalDate;
@@ -50,6 +51,7 @@
             return Math.max(maxRecorded, maxOwnerMonth) + 1;
         }
 
+        @Transactional
         public Auction recordAuction(Long chitGroupId, Long winnerId,
                                      Integer monthNumber, BigDecimal bidAmount,
                                      boolean isDoubleChitRequested) {
@@ -102,7 +104,7 @@
             // Validate double chit eligibility — same 60% rule, now enforced as a GATE not a trigger
             if (isDoubleChit) {
                 BigDecimal sixtyPercent = group.getTotalChitAmount().multiply(BigDecimal.valueOf(0.6));
-                if (group.getOwnerBalance().compareTo(sixtyPercent) <= 0) {
+                if (group.getChitGroupBalance().compareTo(sixtyPercent) <= 0) {
                     throw new CustomException("Owner balance must be more than 60% of pool for double chit.");
                 }
             }
@@ -123,11 +125,11 @@
             // 5. Calculate received amount — always from pool
             BigDecimal receivedAmount = group.getTotalChitAmount().subtract(bidAmount);
 
-            // Update owner balance
+            // Update group balance (the accumulated dividend pool)
             if (isDoubleChit) {
-                group.setOwnerBalance(group.getOwnerBalance().subtract(group.getTotalChitAmount()).add(bidAmount));
+                group.setChitGroupBalance(group.getChitGroupBalance().subtract(group.getTotalChitAmount()).add(bidAmount));
             } else {
-                group.setOwnerBalance(group.getOwnerBalance().add(bidAmount));
+                group.setChitGroupBalance(group.getChitGroupBalance().add(bidAmount));
             }
 
             // 6. Validate month number
@@ -151,12 +153,17 @@
             auction.setAuctionDate(LocalDate.now());
             auction.setIsDoubleChit(isDoubleChit);
             auction.setIsOwnerMonth(false);
-            auction.setOwnerBalanceAfter(group.getOwnerBalance());
+            auction.setChitGroupBalanceAfter(group.getChitGroupBalance());
 
             Auction savedAuction = auctionRepository.save(auction);
 
-// totalWinners already includes existing auctions + owner months;
-// +1 here accounts for the auction we just saved
+            // Data-driven completion: a group is complete when every "slot" is
+            // filled. There are (member rows) + 1 slots -- the extra slot is the
+            // owner, who wins their single owner-month and is not stored in the
+            // members table. Counting from actual rows (not the totalMembers
+            // field) makes this independent of whether you stored N or N+1.
+            // totalWinners here counts auctions/owner-months BEFORE this save,
+            // so +1 accounts for the auction we just recorded.
             if ((totalWinners + 1) >= totalMembers + 1) {
                 group.setStatus(ChitGroupStatus.COMPLETED);
                 chitGroupRepository.save(group);
@@ -169,10 +176,10 @@
             return auctionRepository.findByChitGroupId(chitGroupId);
         }
 
-        public BigDecimal getOwnerBalance(Long chitGroupId) {
+        public BigDecimal getChitGroupBalance(Long chitGroupId) {
             ChitGroup group = chitGroupRepository.findById(chitGroupId)
                     .orElseThrow(() -> new CustomException("Chit group not found"));
-            return group.getOwnerBalance();
+            return group.getChitGroupBalance();
         }
 
         public Map<String, Object> getLastMonthPayout(Long chitGroupId) {
@@ -180,12 +187,12 @@
                     .orElseThrow(() -> new CustomException("Chit group not found"));
 
             long totalMembers = memberRepository.countByChitGroupId(chitGroupId);
-            BigDecimal dividend = group.getOwnerBalance()
+            BigDecimal dividend = group.getChitGroupBalance()
                     .divide(BigDecimal.valueOf(totalMembers), 2, java.math.RoundingMode.HALF_UP);
             BigDecimal amountToPay = group.getMonthlyContribution().subtract(dividend);
 
             return Map.of(
-                    "ownerBalance", group.getOwnerBalance(),
+                    "chitGroupBalance", group.getChitGroupBalance(),
                     "totalMembers", totalMembers,
                     "dividendPerMember", dividend,
                     "amountEachMemberPays", amountToPay
