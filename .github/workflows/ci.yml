@@ -20,3 +20,6 @@ jobs:
         run: mvn -B test
       - name: Build jar
         run: mvn -B package -DskipTests
+      - name: Deploy to Render
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
