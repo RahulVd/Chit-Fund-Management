@@ -20,6 +20,8 @@ jobs:
         run: mvn -B test
       - name: Build jar
         run: mvn -B package -DskipTests
+      - name: Build Docker image
+        run: docker build -t chitfund-backend:test .
       - name: Deploy to Render
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
