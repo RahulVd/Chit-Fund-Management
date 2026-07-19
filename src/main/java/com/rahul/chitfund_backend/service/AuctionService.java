@@ -41,7 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
             int maxRecorded = auctionRepository.findByChitGroupId(chitGroupId).stream()
                     .mapToInt(Auction::getMonthNumber)
                     .max()
-                    .orElse(0);
+                    .orElse(0) ;
 
             int maxOwnerMonth = ownerMonthRepository.findByChitGroupId(chitGroupId).stream()
                     .mapToInt(om -> om.getMonthNumber())
