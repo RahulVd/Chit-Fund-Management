@@ -1,0 +1,28 @@
+containers:
+  - image: image-registry.openshift-image-registry.svc:5000/rahulkai-dev/chitfund-backend@sha256:...
+    name: chitfund-backend
+    ports:
+      - containerPort: 8080
+        protocol: TCP
+
+    # --- PASTE THIS BLOCK ---
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "500m"
+        memory: "768Mi"
+    livenessProbe:
+      httpGet:
+        path: /actuator/health/liveness
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /actuator/health/readiness
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 5
+    # --- END PASTE ---
