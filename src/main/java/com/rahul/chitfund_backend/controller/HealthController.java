@@ -7,7 +7,7 @@ public class HealthController {
 
     @GetMapping("/api/health")
     public String health() {
-        return "Chit Fund Backend Running";
+        return "Chit Fund Backend Running v2";
     }
 }
 

@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/login", "/api/health").permitAll()
+                        ..requestMatchers("/actuator/health/**", "/api/auth/login", "/api/health").permitAll()
                         .anyRequest().authenticated()
 
                 )
@@ -43,7 +43,9 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "https://chit-fund-frontend.vercel.app"
+                "https://chit-fund-frontend.vercel.app",
+                "http://chitfund.local"
+
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

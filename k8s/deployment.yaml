@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chitfund-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chitfund-backend
+  template:
+    metadata:
+      labels:
+        app: chitfund-backend
+    spec:
+      containers:
+        - name: chitfund-backend
+          image: chitfund-backend:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: chitfund-config
+                  key: DB_HOST
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: chitfund-config
+                  key: DB_NAME
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: chitfund-config
+                  key: DB_PORT
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: chitfund-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chitfund-secret
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chitfund-secret
+                  key: JWT_SECRET
+            - name: ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: chitfund-secret
+                  key: ADMIN_USERNAME
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chitfund-secret
+                  key: ADMIN_PASSWORD
